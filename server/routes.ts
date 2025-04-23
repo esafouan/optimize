@@ -261,6 +261,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: "Invalid consumption data", error });
     }
   });
+  
+  // Update consumption by ID
+  app.patch(`${apiPrefix}/consumption/:id`, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { demand } = req.body;
+      
+      if (demand === undefined) {
+        return res.status(400).json({ message: "Demand value is required" });
+      }
+      
+      const existingData = await storage.getConsumption(null, null, id);
+      
+      if (!existingData) {
+        return res.status(404).json({ message: "Consumption data not found" });
+      }
+      
+      const updatedData = await storage.updateConsumption(id, { demand });
+      
+      // After updating consumption, generate new optimization suggestions
+      await generateOptimizationSuggestionsForCurrentState();
+      await calculateEconomicImpactForCurrentState();
+      
+      return res.json(updatedData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update consumption data", error });
+    }
+  });
 
   /**
    * SIMULATION API

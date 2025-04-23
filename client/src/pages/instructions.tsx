@@ -1,4 +1,5 @@
 import InstructionPanel from "@/components/instructions/instruction-panel";
+import ConsumptionController from "@/components/consumption/consumption-controller";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Battery, Cpu, Sun, LucideIcon, Activity } from "lucide-react";
@@ -29,7 +30,7 @@ function StatusItem({ title, value, icon: Icon, className }: StatusItemProps) {
 }
 
 export default function Instructions() {
-  // Get current simulation state
+  // Get current state
   const { data: solar } = useQuery<SolarProduction>({
     queryKey: ["/api/solar/current"],
   });
@@ -53,9 +54,9 @@ export default function Instructions() {
   const isDeficit = energyBalance < 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h1 className="text-3xl font-bold">Energy Management Instructions</h1>
-      <p className="text-muted-foreground mb-6">
+      <p className="text-muted-foreground">
         Real-time recommendations and forecasts to optimize energy usage
       </p>
 
@@ -78,7 +79,20 @@ export default function Instructions() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* Energy Control Panel */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Energy Control Panel</CardTitle>
+          <CardDescription>
+            Adjust demand and solar production to see optimization recommendations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ConsumptionController />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <InstructionPanel />
         
         <Card className="col-span-full lg:col-span-8">
