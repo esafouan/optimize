@@ -187,6 +187,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: "Invalid solar production data", error });
     }
   });
+  
+  // Update solar production by ID
+  app.patch(`${apiPrefix}/solar/:id`, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { output } = req.body;
+      
+      if (output === undefined) {
+        return res.status(400).json({ message: "Output value is required" });
+      }
+      
+      const existingData = await storage.getSolarProduction(null, null, id);
+      
+      if (!existingData) {
+        return res.status(404).json({ message: "Solar production data not found" });
+      }
+      
+      const updatedData = await storage.updateSolarProduction(id, { output });
+      
+      // After updating solar production, generate new optimization suggestions
+      await generateOptimizationSuggestionsForCurrentState();
+      await calculateEconomicImpactForCurrentState();
+      
+      return res.json(updatedData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update solar production data", error });
+    }
+  });
 
   /**
    * CONSUMPTION API

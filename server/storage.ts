@@ -24,14 +24,14 @@ export interface IStorage {
   deleteEngine(id: number): Promise<boolean>;
 
   // Solar production operations
-  getSolarProduction(day: number, hour: number): Promise<SolarProduction | undefined>;
+  getSolarProduction(day: number | null, hour: number | null, id?: number): Promise<SolarProduction | undefined>;
   getDailySolarProduction(day: number): Promise<SolarProduction[]>;
   getWeeklySolarProduction(): Promise<SolarProduction[]>;
   createSolarProduction(data: InsertSolarProduction): Promise<SolarProduction>;
   updateSolarProduction(id: number, updates: Partial<InsertSolarProduction>): Promise<SolarProduction | undefined>;
 
   // Consumption operations
-  getConsumption(day: number, hour: number): Promise<EnergyConsumption | undefined>;
+  getConsumption(day: number | null, hour: number | null, id?: number): Promise<EnergyConsumption | undefined>;
   getDailyConsumption(day: number): Promise<EnergyConsumption[]>;
   getWeeklyConsumption(): Promise<EnergyConsumption[]>;
   createConsumption(data: InsertEnergyConsumption): Promise<EnergyConsumption>;
@@ -285,10 +285,18 @@ export class MemStorage implements IStorage {
   }
 
   // Solar production operations
-  async getSolarProduction(day: number, hour: number): Promise<SolarProduction | undefined> {
-    return Array.from(this.solarProductions.values()).find(
-      (prod) => prod.day === day && prod.hour === hour
-    );
+  async getSolarProduction(day: number | null, hour: number | null, id?: number): Promise<SolarProduction | undefined> {
+    if (id !== undefined) {
+      return this.solarProductions.get(id);
+    }
+    
+    if (day !== null && hour !== null) {
+      return Array.from(this.solarProductions.values()).find(
+        (prod) => prod.day === day && prod.hour === hour
+      );
+    }
+    
+    return undefined;
   }
 
   async getDailySolarProduction(day: number): Promise<SolarProduction[]> {
@@ -326,10 +334,18 @@ export class MemStorage implements IStorage {
   }
 
   // Consumption operations
-  async getConsumption(day: number, hour: number): Promise<EnergyConsumption | undefined> {
-    return Array.from(this.energyConsumptions.values()).find(
-      (consumption) => consumption.day === day && consumption.hour === hour
-    );
+  async getConsumption(day: number | null, hour: number | null, id?: number): Promise<EnergyConsumption | undefined> {
+    if (id !== undefined) {
+      return this.energyConsumptions.get(id);
+    }
+    
+    if (day !== null && hour !== null) {
+      return Array.from(this.energyConsumptions.values()).find(
+        (consumption) => consumption.day === day && consumption.hour === hour
+      );
+    }
+    
+    return undefined;
   }
 
   async getDailyConsumption(day: number): Promise<EnergyConsumption[]> {

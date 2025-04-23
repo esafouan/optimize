@@ -1,312 +1,133 @@
-import { useEffect, useState } from "react";
-import { apiRequest } from "@/lib/queryClient";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  AlertTriangle,
-  Clock,
-  Lightbulb,
-  RefreshCw,
-  Settings,
-  Zap,
-} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useInstructions } from "@/hooks/use-instructions";
+import { ArrowDownCircle, ArrowUpCircle, AlertCircle, Clock, Zap } from "lucide-react";
 import { formatEnergy } from "@/lib/utils";
-import { Engine } from "@shared/schema";
-
-type Instruction = {
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  type: "immediate" | "scheduled";
-  engineId?: number;
-  action?: string;
-};
-
-type ForecastInstruction = {
-  hour: number;
-  day: number;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  engineId?: number;
-  action?: string;
-};
-
-interface InstructionData {
-  currentInstructions: Instruction[];
-  forecastInstructions: ForecastInstruction[];
-}
 
 export default function InstructionPanel() {
-  // Get instructions
-  const {
-    data: instructions,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<InstructionData>({
-    queryKey: ["/api/instructions"],
-    refetchInterval: 60000, // Refetch every minute
-  });
+  const { 
+    currentInstructions, 
+    forecastInstructions,
+    solarData,
+    consumptionData,
+    enginesData,
+    isLoading 
+  } = useInstructions();
 
-  // Get engines
-  const { data: engines } = useQuery<Engine[]>({
-    queryKey: ["/api/engines"],
-  });
+  // Calculate engine output
+  const engineOutput = enginesData?.reduce((total, engine) => {
+    return total + (engine.isRunning ? engine.currentOutput : 0);
+  }, 0) || 0;
 
-  const handleApplyInstruction = async (
-    instruction: Instruction,
-    engineId?: number
-  ) => {
-    if (!engineId || !instruction.action) return;
+  // Calculate energy balance
+  const totalProduction = (solarData?.output || 0) + engineOutput;
+  const energyBalance = totalProduction - (consumptionData?.demand || 0);
+  const isDeficit = energyBalance < 0;
 
-    try {
-      if (instruction.action === "startEngine") {
-        await apiRequest(`/api/engines/${engineId}/toggle`, "PATCH", {
-          isRunning: true
-        });
-      } else if (instruction.action === "shutDownEngine") {
-        await apiRequest(`/api/engines/${engineId}/toggle`, "PATCH", {
-          isRunning: false
-        });
-      } else if (instruction.action === "optimizeEngine") {
-        const engine = engines?.find((e) => e.id === engineId);
-        if (engine) {
-          await apiRequest(`/api/engines/${engineId}/output`, "PATCH", {
-            currentOutput: engine.optimalThreshold
-          });
-        }
-      }
-
-      // Refetch data after applying instruction
-      setTimeout(() => {
-        refetch();
-      }, 500);
-    } catch (error) {
-      console.error("Failed to apply instruction:", error);
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "text-red-500";
-      case "medium":
-        return "text-yellow-500";
-      case "low":
-        return "text-green-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return (
-          <Badge variant="destructive" className="mr-2">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            Urgent
-          </Badge>
-        );
-      case "medium":
-        return (
-          <Badge variant="default" className="mr-2 bg-yellow-500">
-            <Clock className="h-3 w-3 mr-1" />
-            Important
-          </Badge>
-        );
-      case "low":
-        return (
-          <Badge variant="outline" className="mr-2 border-green-500 text-green-500">
-            <Lightbulb className="h-3 w-3 mr-1" />
-            Suggestion
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const getActionIcon = (action?: string) => {
-    switch (action) {
-      case "startEngine":
-        return <Zap className="h-4 w-4 mr-1" />;
-      case "shutDownEngine":
-        return <Settings className="h-4 w-4 mr-1" />;
-      case "optimizeEngine":
-        return <RefreshCw className="h-4 w-4 mr-1" />;
-      default:
-        return null;
-    }
-  };
-
-  if (isLoading) {
+  // Render priority badge with color
+  const renderPriorityBadge = (priority: 'high' | 'medium' | 'low') => {
+    const colors = {
+      high: "bg-red-100 text-red-800 hover:bg-red-100",
+      medium: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
+      low: "bg-green-100 text-green-800 hover:bg-green-100",
+    };
+    
     return (
-      <Card className="col-span-full lg:col-span-4">
-        <CardHeader>
-          <CardTitle>Loading Instructions...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center">
-            <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        </CardContent>
-      </Card>
+      <Badge className={colors[priority]}>
+        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      </Badge>
     );
-  }
-
-  if (error) {
-    return (
-      <Card className="col-span-full lg:col-span-4">
-        <CardHeader>
-          <CardTitle>Error Loading Instructions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center flex-col">
-            <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
-            <p>Failed to load optimization instructions.</p>
-            <Button onClick={() => refetch()} className="mt-4">
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  };
 
   return (
     <Card className="col-span-full lg:col-span-4">
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <span>Optimization Instructions</span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => refetch()}
-            className="h-8"
-          >
-            <RefreshCw className="h-3.5 w-3.5 mr-1" />
-            Refresh
-          </Button>
+        <CardTitle className="flex items-center justify-between">
+          <div>Current Instructions</div>
+          {isDeficit ? (
+            <Badge variant="destructive" className="ml-2">Energy Deficit</Badge>
+          ) : (
+            <Badge variant="outline" className="bg-green-100 text-green-800 ml-2">Energy Surplus</Badge>
+          )}
         </CardTitle>
-        <CardDescription>
-          Real-time instructions for optimal energy usage
-        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="current" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="current">Current Actions</TabsTrigger>
-            <TabsTrigger value="forecast">Future Forecast</TabsTrigger>
-          </TabsList>
-          <TabsContent value="current">
-            {instructions?.currentInstructions.length === 0 ? (
-              <div className="h-64 flex items-center justify-center flex-col text-center">
-                <Lightbulb className="h-12 w-12 text-yellow-500 mb-4" />
-                <p className="text-muted-foreground">
-                  No immediate actions needed. The system is running optimally.
-                </p>
+      <CardContent className="space-y-4 max-h-[600px] overflow-y-auto">
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
+            <span className="text-sm text-muted-foreground">Solar</span>
+            <span className="text-xl font-bold">{formatEnergy(solarData?.output || 0)}</span>
+          </div>
+          <div className="flex flex-col items-center p-3 bg-primary/10 rounded-md">
+            <span className="text-sm text-muted-foreground">Demand</span>
+            <span className="text-xl font-bold">{formatEnergy(consumptionData?.demand || 0)}</span>
+          </div>
+          <div className={`flex flex-col items-center p-3 rounded-md ${isDeficit ? 'bg-red-100' : 'bg-green-100'}`}>
+            <span className="text-sm text-muted-foreground">Balance</span>
+            <span className="text-xl font-bold">
+              {isDeficit ? '-' : '+'} {formatEnergy(Math.abs(energyBalance))}
+            </span>
+          </div>
+        </div>
+        
+        {currentInstructions.length === 0 ? (
+          <Alert>
+            <Zap className="h-4 w-4" />
+            <AlertTitle>No immediate actions needed</AlertTitle>
+            <AlertDescription>
+              The system is operating efficiently. No optimization actions are required at this time.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          currentInstructions.map((instruction, index) => (
+            <Alert 
+              key={index} 
+              variant={instruction.priority === 'high' ? 'destructive' : 'default'}
+              className="relative"
+            >
+              <div className="absolute right-4 top-4">
+                {renderPriorityBadge(instruction.priority)}
               </div>
-            ) : (
-              <div className="space-y-4 mt-2 max-h-[400px] overflow-y-auto pr-2">
-                {instructions?.currentInstructions.map((instruction, i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <div
-                      className={`h-1 w-full ${
-                        instruction.priority === "high"
-                          ? "bg-red-500"
-                          : instruction.priority === "medium"
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
-                      }`}
-                    />
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center">
-                          {getPriorityBadge(instruction.priority)}
-                        </div>
-                        {instruction.engineId && instruction.action && (
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              handleApplyInstruction(
-                                instruction,
-                                instruction.engineId
-                              )
-                            }
-                            className="h-8"
-                          >
-                            {getActionIcon(instruction.action)}
-                            Apply
-                          </Button>
-                        )}
-                      </div>
-                      <h4 className="font-medium text-lg mb-1">{instruction.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {instruction.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="flex gap-3">
+                {instruction.action?.includes('start') || instruction.action?.includes('increase') ? (
+                  <ArrowUpCircle className="h-5 w-5 text-green-600" />
+                ) : instruction.action?.includes('shut') || instruction.action?.includes('decrease') ? (
+                  <ArrowDownCircle className="h-5 w-5 text-amber-600" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                )}
+                <div>
+                  <AlertTitle>{instruction.title}</AlertTitle>
+                  <AlertDescription>{instruction.description}</AlertDescription>
+                </div>
               </div>
-            )}
-          </TabsContent>
-          <TabsContent value="forecast">
-            {instructions?.forecastInstructions.length === 0 ? (
-              <div className="h-64 flex items-center justify-center flex-col text-center">
-                <Clock className="h-12 w-12 text-blue-500 mb-4" />
-                <p className="text-muted-foreground">
-                  No future predictions available at this time.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4 mt-2 max-h-[400px] overflow-y-auto pr-2">
-                {instructions?.forecastInstructions.map((instruction, i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <div
-                      className={`h-1 w-full ${
-                        instruction.priority === "high"
-                          ? "bg-red-500"
-                          : instruction.priority === "medium"
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
-                      }`}
-                    />
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center">
-                          {getPriorityBadge(instruction.priority)}
-                          <Badge variant="outline" className="ml-1">
-                            Day {instruction.day}, {instruction.hour}:00
-                          </Badge>
-                        </div>
-                      </div>
-                      <h4 className="font-medium text-lg mb-1">{instruction.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {instruction.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </Alert>
+          ))
+        )}
+
+        {forecastInstructions.length > 0 && (
+          <>
+            <h3 className="text-lg font-semibold mt-6 pt-3 border-t">Upcoming Actions</h3>
+            
+            {forecastInstructions.map((instruction, index) => (
+              <Alert key={`forecast-${index}`} variant="outline" className="relative">
+                <div className="absolute right-4 top-4">
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {instruction.hour}:00
+                  </Badge>
+                </div>
+                <div className="flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <AlertTitle>{instruction.title}</AlertTitle>
+                    <AlertDescription>{instruction.description}</AlertDescription>
+                  </div>
+                </div>
+              </Alert>
+            ))}
+          </>
+        )}
       </CardContent>
     </Card>
   );
