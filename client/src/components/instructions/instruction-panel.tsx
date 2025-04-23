@@ -76,21 +76,18 @@ export default function InstructionPanel() {
 
     try {
       if (instruction.action === "startEngine") {
-        await apiRequest(`/api/engines/${engineId}/toggle`, {
-          method: "PATCH",
-          body: JSON.stringify({ isRunning: true }),
+        await apiRequest(`/api/engines/${engineId}/toggle`, "PATCH", {
+          isRunning: true
         });
       } else if (instruction.action === "shutDownEngine") {
-        await apiRequest(`/api/engines/${engineId}/toggle`, {
-          method: "PATCH",
-          body: JSON.stringify({ isRunning: false }),
+        await apiRequest(`/api/engines/${engineId}/toggle`, "PATCH", {
+          isRunning: false
         });
       } else if (instruction.action === "optimizeEngine") {
         const engine = engines?.find((e) => e.id === engineId);
         if (engine) {
-          await apiRequest(`/api/engines/${engineId}/output`, {
-            method: "PATCH",
-            body: JSON.stringify({ currentOutput: engine.optimalThreshold }),
+          await apiRequest(`/api/engines/${engineId}/output`, "PATCH", {
+            currentOutput: engine.optimalThreshold
           });
         }
       }

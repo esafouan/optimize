@@ -9,6 +9,7 @@ import {
   FileText,
   Settings,
   Zap,
+  Lightbulb,
 } from "lucide-react";
 
 type SidebarLink = {
@@ -47,6 +48,11 @@ export default function Sidebar() {
       icon: <Clock className="h-5 w-5 mr-3" />,
     },
     {
+      href: "/instructions",
+      label: "Instructions",
+      icon: <Lightbulb className="h-5 w-5 mr-3" />,
+    },
+    {
       href: "/reports",
       label: "Reports",
       icon: <FileText className="h-5 w-5 mr-3" />,
@@ -66,9 +72,9 @@ export default function Sidebar() {
         <div className="space-y-1">
           {links.map((link) => (
             <Link key={link.href} href={link.href}>
-              <a
+              <div
                 className={cn(
-                  "flex items-center px-2 py-2 text-sm font-medium rounded-md",
+                  "flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer",
                   location === link.href
                     ? "bg-primary text-white"
                     : "text-neutral hover:bg-bg-light"
@@ -76,7 +82,7 @@ export default function Sidebar() {
               >
                 {link.icon}
                 {link.label}
-              </a>
+              </div>
             </Link>
           ))}
         </div>

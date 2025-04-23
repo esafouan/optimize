@@ -349,7 +349,22 @@ export function generateInstructions(
   }
   
   return {
-    currentInstructions,
-    forecastInstructions
+    currentInstructions: currentInstructions as Array<{
+      title: string;
+      description: string;
+      priority: 'high' | 'medium' | 'low';
+      type: 'immediate' | 'scheduled';
+      engineId?: number;
+      action?: string;
+    }>,
+    forecastInstructions: forecastInstructions as Array<{
+      hour: number;
+      day: number;
+      title: string;
+      description: string;
+      priority: 'high' | 'medium' | 'low';
+      engineId?: number;
+      action?: string;
+    }>
   };
 }
