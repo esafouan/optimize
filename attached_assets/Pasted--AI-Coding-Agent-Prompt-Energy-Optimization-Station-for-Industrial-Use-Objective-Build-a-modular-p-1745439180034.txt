@@ -1,0 +1,113 @@
+ AI Coding Agent Prompt: Energy Optimization Station for Industrial Use
+Objective:
+Build a modular prototype of a smart energy management dashboard for an industrial station that combines solar energy and multiple engine generators. The system should simulate production and consumption over time, and provide optimization recommendations to minimize costs and energy waste.
+
+🔑 Core Features & Components
+1. 🔋 Engine Management Module
+Allow adding and managing multiple engines.
+
+Each engine has:
+
+Capacité max (kWh/h)
+
+Rendement (kWh/litre)
+
+Seuil optimal (min)
+
+Each engine should track its state (on/off, efficiency, current output).
+
+2. ☀️ Solar Production Simulator
+Simulate hourly solar energy production for 7 days.
+
+Use adjustable mock data or randomized values based on time of day (e.g., 0 at night, peak around noon).
+
+3. 🏭 Consumption Demand Simulator
+Simulate factory energy consumption per hour.
+
+Allow user-defined demand profiles per day or use randomized input with:
+
+Base load
+
+Peak hours
+
+Option to import CSV or JSON for real consumption data
+
+4. ⚡ Energy Storage (Optional)
+Add a battery or energy storage module with:
+
+Max capacity
+
+Current charge level
+
+Charge/discharge efficiency
+
+Used to store excess solar or engine output during low demand.
+
+5. 📊 Station Overview Dashboard
+Real-time status of:
+
+Engines (running/off, output, efficiency)
+
+Solar energy production
+
+Energy storage level
+
+Factory demand vs supply
+
+Use charts or grid visualizations.
+
+6. 🧠 Optimization Engine
+Algorithm to suggest best configuration per hour:
+
+Which engines to turn on/off
+
+Adjust engine Seuil optimal
+
+Prioritize engines with highest Rendement
+
+Use stored energy when solar is insufficient
+
+Avoid overproduction
+
+Display recommended state vs actual state
+
+7. 🌍 Environmental & Economic Impact
+Calculate:
+
+Total fuel saved (based on Rendement)
+
+Total energy cost reduction
+
+Carbon offset from using solar
+
+Provide summary report after 7-day simulation.
+
+🧰 Tech Stack Suggestions (Optional)
+Frontend: React or Vue, Tailwind CSS, Chart.js or Recharts
+
+Backend: Node.js + Express or Python + Flask
+
+Storage: In-memory (for simulation), or MongoDB/SQLite
+
+Optional AI Hook: Use simple heuristics or ML model (linear regression) for predicting energy needs or solar output
+
+🧪 Testing Suggestions
+Validate edge cases like:
+
+0 solar output (bad weather)
+
+All engines off (emergency mode)
+
+Storage full or empty
+
+Run through daily cycles and compare actual vs recommended engine configs.
+
+🎯 Stretch Goals
+User login for saving station configs
+
+Real-time simulation slider (hour-by-hour walkthrough)
+
+Mobile-responsive dashboard
+
+Export reports (PDF/CSV)
+
