@@ -141,6 +141,91 @@ export class MemStorage implements IStorage {
       chargeEfficiency: 0.9,
       dischargeEfficiency: 0.95,
     });
+
+    // Create pre-defined solar production data
+    this.initializeSolarProductionData();
+    
+    // Create pre-defined consumption data
+    this.initializeConsumptionData();
+  }
+
+  // Initialize pre-defined solar production data
+  private async initializeSolarProductionData() {
+    // Day 1 solar production data (24 hours)
+    const solarOutputsByHour = [
+      0, 0, 0, 0, 0, 10, 45, 120, 
+      280, 410, 520, 590, 620, 580, 
+      510, 390, 240, 90, 20, 0, 0, 0, 0, 0
+    ];
+
+    // Create solar production for days 1-7
+    for (let day = 1; day <= 7; day++) {
+      // Add some randomness for each day while maintaining the pattern
+      const dailyMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+
+      for (let hour = 0; hour < 24; hour++) {
+        const baseOutput = solarOutputsByHour[hour];
+        // Apply daily variation + small hourly randomness
+        const output = Math.round(baseOutput * dailyMultiplier * (0.9 + Math.random() * 0.2));
+        
+        await this.createSolarProduction({
+          day,
+          hour,
+          output,
+          weather: this.getWeatherCondition(output, baseOutput)
+        });
+      }
+    }
+  }
+
+  // Get a weather condition based on solar output compared to expected
+  private getWeatherCondition(actual: number, expected: number): string {
+    if (expected === 0) return "Night";
+    
+    const ratio = actual / expected;
+    if (ratio > 0.9) return "Sunny";
+    if (ratio > 0.7) return "Partly Cloudy";
+    if (ratio > 0.4) return "Cloudy";
+    return "Overcast";
+  }
+
+  // Initialize pre-defined consumption data
+  private async initializeConsumptionData() {
+    // Base consumption pattern by hour - industrial facility with working hours
+    const consumptionByHour = [
+      120, 110, 100, 90, 95, 150, 280, 450,
+      600, 680, 720, 750, 720, 700, 
+      680, 650, 550, 420, 350, 300, 250, 180, 150, 130
+    ];
+
+    // Create consumption data for days 1-7
+    for (let day = 1; day <= 7; day++) {
+      // Weekend pattern has reduced consumption
+      const isWeekend = day % 7 === 0 || day % 7 === 6;
+      const dayMultiplier = isWeekend ? 0.6 : 1.0;
+
+      for (let hour = 0; hour < 24; hour++) {
+        // Apply daily pattern + small randomness
+        const demand = Math.round(
+          consumptionByHour[hour] * dayMultiplier * (0.95 + Math.random() * 0.1)
+        );
+        
+        await this.createConsumption({
+          day,
+          hour,
+          demand,
+          source: this.getConsumptionSource(hour)
+        });
+      }
+    }
+  }
+
+  // Get the main consumption source based on the hour
+  private getConsumptionSource(hour: number): string {
+    if (hour >= 8 && hour <= 17) return "Production Line";
+    if (hour >= 6 && hour < 8) return "Startup Procedures";
+    if (hour > 17 && hour <= 20) return "Maintenance";
+    return "Base Facilities";
   }
 
   // User operations

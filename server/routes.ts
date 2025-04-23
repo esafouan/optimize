@@ -390,6 +390,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get economic impact" });
     }
   });
+  
+  /**
+   * INSTRUCTIONS API
+   */
+  // Get optimization instructions for current and future hours
+  app.get(`${apiPrefix}/instructions`, async (req, res) => {
+    try {
+      // Get current simulation state
+      const simulationState = await storage.getSimulationState();
+      if (!simulationState) {
+        return res.status(404).json({ message: "Simulation state not found" });
+      }
+      
+      // Get engines
+      const engines = await storage.getAllEngines();
+      
+      // Get current solar production and demand
+      const currentSolar = await storage.getSolarProduction(
+        simulationState.currentDay,
+        simulationState.currentHour
+      );
+      
+      const currentDemand = await storage.getConsumption(
+        simulationState.currentDay,
+        simulationState.currentHour
+      );
+      
+      // Get energy storage status
+      const energyStorage = await storage.getEnergyStorage();
+      const batteryLevel = energyStorage 
+        ? (energyStorage.currentCharge / energyStorage.maxCapacity) * 100
+        : 50;
+      
+      // Get future solar and demand data (next 6 hours)
+      const forecastSolar = [];
+      const forecastDemand = [];
+      
+      // Collect forecast data for the next 6 hours
+      for (let i = 1; i <= 6; i++) {
+        const forecastHour = (simulationState.currentHour + i) % 24;
+        const forecastDay = simulationState.currentDay + Math.floor((simulationState.currentHour + i) / 24);
+        
+        // Get solar forecast
+        const solarForecast = await storage.getSolarProduction(forecastDay, forecastHour);
+        forecastSolar.push(solarForecast?.output || 0);
+        
+        // Get demand forecast
+        const demandForecast = await storage.getConsumption(forecastDay, forecastHour);
+        forecastDemand.push(demandForecast?.demand || 0);
+      }
+      
+      // Generate instructions using the utility function
+      const { generateInstructions } = await import("../client/src/lib/optimization");
+      const instructions = generateInstructions(
+        engines,
+        currentSolar?.output || 0,
+        currentDemand?.demand || 0,
+        forecastSolar,
+        forecastDemand,
+        simulationState.currentDay,
+        simulationState.currentHour,
+        batteryLevel
+      );
+      
+      res.json(instructions);
+    } catch (error) {
+      console.error("Failed to generate instructions:", error);
+      res.status(500).json({ message: "Failed to generate instructions" });
+    }
+  });
 
   // Helper function to generate optimization suggestions based on current state
   async function generateOptimizationSuggestionsForCurrentState() {

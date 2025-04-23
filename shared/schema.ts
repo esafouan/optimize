@@ -51,6 +51,7 @@ export const solarProduction = pgTable("solar_production", {
   day: integer("day").notNull(), // 1-7
   hour: integer("hour").notNull(), // 0-23
   output: real("output").notNull(), // kWh
+  weather: text("weather"), // Weather condition
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -68,6 +69,7 @@ export const energyConsumption = pgTable("energy_consumption", {
   day: integer("day").notNull(), // 1-7
   hour: integer("hour").notNull(), // 0-23
   demand: real("demand").notNull(), // kWh
+  source: text("source"), // Source of consumption
   createdAt: timestamp("created_at").defaultNow(),
 });
 
