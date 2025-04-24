@@ -31,11 +31,11 @@ export default function Sidebar() {
       label: "Engine Management",
       icon: <Box className="h-5 w-5 mr-3" />,
     },
-    // {
-    //   href: "/solar",
-    //   label: "Solar Production",
-    //   icon: <SunIcon className="h-5 w-5 mr-3" />,
-    // },
+    {
+      href: "/solar",
+      label: "Solar Production",
+      icon: <SunIcon className="h-5 w-5 mr-3" />,
+    },
     {
       href: "/consumption",
       label: "Energy Demand",

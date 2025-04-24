@@ -275,40 +275,80 @@ export default function Engines() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {runningEngines?.map((engine) => (
-                    <Card 
-                      key={engine.id} 
-                      className="cursor-pointer hover:shadow-md transition-shadow border-green-200"
-                      onClick={() => handleViewDetails(engine)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex flex-col items-center space-y-3">
-                          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                            <Zap className="h-6 w-6 text-green-600" />
+                    <Card key={engine.id}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-lg">{engine.name}</CardTitle>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={engine.isRunning ? "text-green-600" : "text-gray-400"}
+                            onClick={() => handleToggleEngine(engine)}
+                          >
+                            <Power className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditEngine(engine)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500"
+                            onClick={() => handleDeleteEngine(engine)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-neutral-light">Max Capacity</p>
+                              <p className="font-medium">{engine.maxCapacity} kWh/h</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-neutral-light">Efficiency</p>
+                              <p className="font-medium">{engine.efficiency.toFixed(1)} kWh/L</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-neutral-light">Optimal Threshold</p>
+                              <p className="font-medium">{engine.optimalThreshold} kWh</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-neutral-light">Status</p>
+                              <Badge 
+                                variant="outline"
+                                className={engine.isRunning ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                              >
+                                {engine.isRunning ? "Running" : "Standby"}
+                              </Badge>
+                            </div>
                           </div>
-                          <h3 className="font-medium text-center">{engine.name}</h3>
-                          <Badge variant="outline" className="bg-green-100 text-green-800">
-                            Running
-                          </Badge>
-                          <p className="text-sm text-center">{engine.currentOutput} kWh</p>
-                          {predictedOutputs[engine.id] && (
-                            <p className="text-xs text-amber-600">
-                              Predicted: {predictedOutputs[engine.id]} kWh
-                            </p>
+          
+                          {engine.isRunning && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <p className="text-sm text-neutral-light">Current Output</p>
+                                <p className="text-sm font-medium">{engine.currentOutput} kWh</p>
+                              </div>
+                              <Slider
+                                value={[engine.currentOutput]}
+                                min={0}
+                                max={engine.maxCapacity}
+                                step={5}
+                                onValueChange={(value) => handleOutputChange(engine.id, value[0])}
+                              />
+                              <div className="flex justify-between text-xs text-neutral-light">
+                                <span>0 kWh</span>
+                                <span>{engine.maxCapacity} kWh</span>
+                              </div>
+                            </div>
                           )}
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={(e) => handleEditEngine(engine, e)}>
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-red-500"
-                              onClick={(e) => handleDeleteEngine(engine, e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -332,56 +372,91 @@ export default function Engines() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {engines?.map((engine) => (
-                    <Card 
-                      key={engine.id} 
-                      className={`cursor-pointer hover:shadow-md transition-shadow ${
-                        engine.isRunning ? "border-green-200" : ""
-                      }`}
-                      onClick={() => handleViewDetails(engine)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex flex-col items-center space-y-3">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            engine.isRunning ? "bg-green-100" : "bg-gray-100"
-                          }`}>
-                            <Zap className={`h-6 w-6 ${
-                              engine.isRunning ? "text-green-600" : "text-gray-400"
-                            }`} />
-                          </div>
-                          <h3 className="font-medium text-center">{engine.name}</h3>
-                          <Badge 
-                            variant="outline"
-                            className={engine.isRunning ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                    <Card key={engine.id}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-lg">{engine.name}</CardTitle>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={engine.isRunning ? "text-green-600" : "text-gray-400"}
+                            onClick={() => handleToggleEngine(engine)}
                           >
-                            {engine.isRunning ? "Running" : "Standby"}
-                          </Badge>
-                          {engine.isRunning && (
-                            <p className="text-sm text-center">{engine.currentOutput} kWh</p>
-                          )}
-                          {engine.isRunning && predictedOutputs[engine.id] && (
-                            <p className="text-xs text-amber-600">
-                              Predicted: {predictedOutputs[engine.id]} kWh
-                            </p>
-                          )}
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={(e) => handleEditEngine(engine, e)}>
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                             
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-red-500"
-                              onClick={(e) => handleDeleteEngine(engine, e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Power className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditEngine(engine)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500"
+                            onClick={() => handleDeleteEngine(engine)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-neutral-light">Max Capacity</p>
+                              <p className="font-medium">{engine.maxCapacity} kWh/h</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-neutral-light">Efficiency</p>
+                              <p className="font-medium">{engine.efficiency.toFixed(1)} kWh/L</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-neutral-light">Optimal Threshold</p>
+                              <p className="font-medium">{engine.optimalThreshold} kWh</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-neutral-light">Status</p>
+                              <Badge 
+                                variant="outline"
+                                className={engine.isRunning ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                              >
+                                {engine.isRunning ? "Running" : "Standby"}
+                              </Badge>
+                            </div>
                           </div>
+
+                          {engine.isRunning && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <p className="text-sm text-neutral-light">Current Output</p>
+                                <p className="text-sm font-medium">{engine.currentOutput} kWh</p>
+                              </div>
+                              <Slider
+                                value={[engine.currentOutput]}
+                                min={0}
+                                max={engine.maxCapacity}
+                                step={5}
+                                onValueChange={(value) => handleOutputChange(engine.id, value[0])}
+                              />
+                              <div className="flex justify-between text-xs text-neutral-light">
+                                <span>0 kWh</span>
+                                <span>{engine.maxCapacity} kWh</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
                   ))}
+                  {engines?.length === 0 && (
+                    <Card className="col-span-full">
+                      <CardContent className="flex flex-col items-center justify-center h-40">
+                        <p className="text-muted-foreground mb-4">No engines available</p>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </CardContent>
             </Card>
