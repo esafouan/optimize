@@ -11,6 +11,11 @@ import Consumption from "@/pages/consumption";
 import Reports from "@/pages/reports";
 import Instructions from "@/pages/instructions";
 import NotFound from "@/pages/not-found";
+import { initializeStorage } from "./lib/storage";
+
+
+// Initialize storage with mock data
+initializeStorage();
 
 function Router() {
   return (
@@ -18,7 +23,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/engines" component={Engines} />
-        <Route path="/solar" component={Solar} />
+        {/* <Route path="/solar" component={Solar} /> */}
         <Route path="/consumption" component={Consumption} />
         <Route path="/instructions" component={Instructions} />
         <Route path="/reports" component={Reports} />

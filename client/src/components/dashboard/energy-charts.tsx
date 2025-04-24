@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  AreaChart,
+  ComposedChart,
+  Bar,
+  Line,
   Area,
   PieChart,
   Pie,
@@ -32,12 +34,14 @@ export default function EnergyCharts() {
     
     // For this demo, we'll assume engines provide the rest of the demand
     const engineForHour = Math.max(0, consumption.demand - solarForHour);
+    const totalProduction = solarForHour + engineForHour;
     
     return {
       name: `${hour}:00`,
       Demand: consumption.demand,
       Solar: solarForHour,
       Engines: engineForHour,
+      TotalProduction: totalProduction,
     };
   }) || [];
 
@@ -92,7 +96,7 @@ export default function EnergyCharts() {
         <CardContent>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
+              <ComposedChart
                 data={energyData}
                 margin={{
                   top: 10,
@@ -106,28 +110,32 @@ export default function EnergyCharts() {
                 <YAxis />
                 <Tooltip formatter={(value) => [`${value} kWh`]} />
                 <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="Demand"
-                  stroke="#172B4D"
-                  fill="rgba(23, 43, 77, 0.1)"
-                  stackId="1"
+                <Bar 
+                  dataKey="Engines" 
+                  fill="#FF5630" 
+                  name="Engines (Histogram)" 
+                  barSize={20}
                 />
                 <Area
                   type="monotone"
                   dataKey="Solar"
                   stroke="#36B37E"
                   fill="rgba(54, 179, 126, 0.1)"
-                  stackId="2"
                 />
-                <Area
+                <Line
                   type="monotone"
-                  dataKey="Engines"
-                  stroke="#FF5630"
-                  fill="rgba(255, 86, 48, 0.1)"
-                  stackId="2"
+                  dataKey="Demand"
+                  stroke="#172B4D"
+                  strokeWidth={2}
                 />
-              </AreaChart>
+                <Line
+                  type="monotone"
+                  dataKey="TotalProduction"
+                  stroke="#0052CC"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </CardContent>

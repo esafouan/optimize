@@ -79,18 +79,6 @@ export default function Instructions() {
         />
       </div>
 
-      {/* Energy Control Panel */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Energy Control Panel</CardTitle>
-          <CardDescription>
-            Adjust demand and solar production to see optimization recommendations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ConsumptionController />
-        </CardContent>
-      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <InstructionPanel />

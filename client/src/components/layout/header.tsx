@@ -26,12 +26,12 @@ export default function Header() {
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-semibold text-neutral">Energy Optimization Dashboard</h2>
-          <div className="bg-bg-light rounded-md p-1 text-sm">
+          {/* <div className="bg-bg-light rounded-md p-1 text-sm">
             <span className="text-neutral-light mr-1">Simulation:</span>
             <span className="font-medium text-neutral">
               Day {simulationState?.currentDay || "..."} / 7
             </span>
-          </div>
+          </div> */}
         </div>
         
         <div className="flex items-center space-x-4">
@@ -49,7 +49,7 @@ export default function Header() {
             </Button>
           </div>
           
-          <Button 
+          {/* <Button 
             size="sm"
             className="flex items-center"
             onClick={isAutoAdvancing ? toggleAutoAdvance : advanceOneHour}
@@ -57,7 +57,7 @@ export default function Header() {
           >
             <Play className="h-4 w-4 mr-1" />
             {isAutoAdvancing ? "Pause Simulation" : "Run Simulation"}
-          </Button>
+          </Button> */}
         </div>
       </div>
     </header>

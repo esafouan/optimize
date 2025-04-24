@@ -103,13 +103,13 @@ export default function ConsumptionSimulator() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Consumption Demand Simulator</h2>
+        <h2 className="text-2xl font-bold">Energy Demand</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Energy Consumption</CardTitle>
+            <CardTitle className="text-lg">Energy Demand</CardTitle>
             <div className="flex items-center space-x-2">
               <Button
                 variant={view === "day" ? "default" : "outline"}

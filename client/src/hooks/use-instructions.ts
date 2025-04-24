@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Engine, SolarProduction, EnergyConsumption } from "@shared/schema";
+import { apiRequest } from "@/lib/api";
 
 type Instruction = {
   title: string;
@@ -24,6 +25,25 @@ type InstructionResponse = {
   currentInstructions: Instruction[];
   forecastInstructions: ForecastInstruction[];
 };
+
+export interface EngineInstruction {
+  engineId: number;
+  engineName: string;
+  currentOutput: number;
+  suggestedOutput: number;
+  reason: string;
+}
+
+export interface Instructions {
+  currentHour: number;
+  nextHour: number;
+  currentDemand: number;
+  predictedDemand: number;
+  currentSolar: number;
+  predictedSolar: number;
+  batteryLevel: number;
+  engineInstructions: EngineInstruction[];
+}
 
 export function useInstructions() {
   // Get instructions data
@@ -63,5 +83,23 @@ export function useInstructions() {
     isLoading,
     error,
     refetchInstructions: refetch
+  };
+}
+
+export function useEngineInstructions() {
+  const { 
+    data: instructions,
+    isLoading,
+    error,
+    refetch
+  } = useQuery<Instructions>({
+    queryKey: ['/api/instructions'],
+  });
+
+  return {
+    instructions,
+    isLoading,
+    error,
+    refetch
   };
 }
