@@ -2,8 +2,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useInstructions } from "@/hooks/use-instructions";
-import { ArrowDownCircle, ArrowUpCircle, AlertCircle, Clock, Zap } from "lucide-react";
-import { formatEnergy } from "@/lib/utils";
+import { ArrowDownCircle, ArrowUpCircle, AlertCircle, Clock, Zap, Droplet, Leaf, DollarSign } from "lucide-react";
+import { formatEnergy, formatCurrency } from "@/lib/utils";
+import { calculateFuelConsumption, calculateCarbonEmissions, calculateFuelCost } from "@/lib/fuel-calculation";
 
 export default function InstructionPanel() {
   const { 
@@ -25,6 +26,11 @@ export default function InstructionPanel() {
   const energyBalance = totalProduction - (consumptionData?.demand || 0);
   const isDeficit = energyBalance < 0;
 
+  // Calculate fuel consumption and costs
+  const fuelConsumption = enginesData ? calculateFuelConsumption(enginesData) : 0;
+  const carbonEmissions = calculateCarbonEmissions(fuelConsumption);
+  const fuelCost = calculateFuelCost(fuelConsumption);
+
   // Render priority badge with color
   const renderPriorityBadge = (priority: 'high' | 'medium' | 'low') => {
     const colors = {
@@ -44,7 +50,7 @@ export default function InstructionPanel() {
     <Card className="col-span-full lg:col-span-4">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <div>Current Instructions</div>
+          <div>Energy Optimization Instructions</div>
           {isDeficit ? (
             <Badge variant="destructive" className="ml-2">Energy Deficit</Badge>
           ) : (
@@ -67,6 +73,30 @@ export default function InstructionPanel() {
             <span className="text-xl font-bold">
               {isDeficit ? '-' : '+'} {formatEnergy(Math.abs(energyBalance))}
             </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-4 border-t pt-4">
+          <div className="flex flex-col items-center p-3 bg-blue-50 rounded-md">
+            <div className="flex items-center gap-1">
+              <Droplet className="h-4 w-4 text-blue-600" />
+              <span className="text-sm text-muted-foreground">Fuel Use</span>
+            </div>
+            <span className="text-lg font-bold">{fuelConsumption.toFixed(1)} L/hr</span>
+          </div>
+          <div className="flex flex-col items-center p-3 bg-amber-50 rounded-md">
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-4 w-4 text-amber-600" />
+              <span className="text-sm text-muted-foreground">Cost</span>
+            </div>
+            <span className="text-lg font-bold">{formatCurrency(fuelCost)}/hr</span>
+          </div>
+          <div className="flex flex-col items-center p-3 bg-green-50 rounded-md">
+            <div className="flex items-center gap-1">
+              <Leaf className="h-4 w-4 text-green-600" />
+              <span className="text-sm text-muted-foreground">CO₂</span>
+            </div>
+            <span className="text-lg font-bold">{carbonEmissions.toFixed(1)} kg/hr</span>
           </div>
         </div>
         
@@ -110,9 +140,9 @@ export default function InstructionPanel() {
             <h3 className="text-lg font-semibold mt-6 pt-3 border-t">Upcoming Actions</h3>
             
             {forecastInstructions.map((instruction, index) => (
-              <Alert key={`forecast-${index}`} variant="outline" className="relative">
+              <Alert key={`forecast-${index}`} className="relative border border-blue-100">
                 <div className="absolute right-4 top-4">
-                  <Badge variant="outline" className="flex items-center gap-1">
+                  <Badge className="flex items-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-50">
                     <Clock className="h-3 w-3" />
                     {instruction.hour}:00
                   </Badge>

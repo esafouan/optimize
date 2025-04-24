@@ -453,25 +453,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get optimization instructions for current and future hours
   app.get(`${apiPrefix}/instructions`, async (req, res) => {
     try {
-      // Get current simulation state
-      const simulationState = await storage.getSimulationState();
-      if (!simulationState) {
-        return res.status(404).json({ message: "Simulation state not found" });
-      }
+      // Get the current day and hour - fixed values for real-time usage
+      const currentDay = 1;
+      const currentHour = 8;
       
       // Get engines
       const engines = await storage.getAllEngines();
       
       // Get current solar production and demand
-      const currentSolar = await storage.getSolarProduction(
-        simulationState.currentDay,
-        simulationState.currentHour
-      );
-      
-      const currentDemand = await storage.getConsumption(
-        simulationState.currentDay,
-        simulationState.currentHour
-      );
+      const currentSolar = await storage.getSolarProduction(currentDay, currentHour);
+      const currentDemand = await storage.getConsumption(currentDay, currentHour);
       
       // Get energy storage status
       const energyStorage = await storage.getEnergyStorage();
@@ -485,8 +476,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Collect forecast data for the next 6 hours
       for (let i = 1; i <= 6; i++) {
-        const forecastHour = (simulationState.currentHour + i) % 24;
-        const forecastDay = simulationState.currentDay + Math.floor((simulationState.currentHour + i) / 24);
+        const forecastHour = (currentHour + i) % 24;
+        const forecastDay = currentDay + Math.floor((currentHour + i) / 24);
         
         // Get solar forecast
         const solarForecast = await storage.getSolarProduction(forecastDay, forecastHour);
@@ -505,8 +496,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentDemand?.demand || 0,
         forecastSolar,
         forecastDemand,
-        simulationState.currentDay,
-        simulationState.currentHour,
+        currentDay,
+        currentHour,
         batteryLevel
       );
       
@@ -520,18 +511,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function to generate optimization suggestions based on current state
   async function generateOptimizationSuggestionsForCurrentState() {
     try {
-      const simulationState = await storage.getSimulationState();
-      if (!simulationState) return;
+      // Use fixed day/hour values
+      const currentDay = 1;
+      const currentHour = 8;
       
       const engines = await storage.getAllEngines();
-      const solarProduction = await storage.getSolarProduction(
-        simulationState.currentDay,
-        simulationState.currentHour
-      );
-      const consumption = await storage.getConsumption(
-        simulationState.currentDay,
-        simulationState.currentHour
-      );
+      const solarProduction = await storage.getSolarProduction(currentDay, currentHour);
+      const consumption = await storage.getConsumption(currentDay, currentHour);
       
       // Generate suggestions
       const suggestions = generateOptimizationSuggestions(
@@ -546,8 +532,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create new suggestions
       for (const suggestion of suggestions) {
         const suggestionData = {
-          day: simulationState.currentDay,
-          hour: simulationState.currentHour,
+          day: currentDay,
+          hour: currentHour,
           suggestion: suggestion.suggestion,
           details: suggestion.details,
           engineId: suggestion.engineId,
@@ -565,11 +551,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function to calculate economic impact based on current state
   async function calculateEconomicImpactForCurrentState() {
     try {
-      const simulationState = await storage.getSimulationState();
-      if (!simulationState) return;
+      // Use fixed day value
+      const currentDay = 1;
       
       const engines = await storage.getAllEngines();
-      const dailySolar = await storage.getDailySolarProduction(simulationState.currentDay);
+      const dailySolar = await storage.getDailySolarProduction(currentDay);
       
       // Calculate average engine efficiency
       const avgEngineEfficiency = engines.length
@@ -583,14 +569,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const impact = calculateEconomicImpact(totalSolarProduction, avgEngineEfficiency);
       
       // Get existing impact record or create new one
-      const existingImpact = await storage.getEconomicImpactByDay(simulationState.currentDay);
+      const existingImpact = await storage.getEconomicImpactByDay(currentDay);
       
       if (existingImpact) {
         await storage.updateEconomicImpact(existingImpact.id, impact);
       } else {
         await storage.createEconomicImpact({
           ...impact,
-          day: simulationState.currentDay,
+          day: currentDay,
         });
       }
     } catch (error) {
