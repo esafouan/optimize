@@ -103,23 +103,23 @@ export class MemStorage implements IStorage {
     this.initializeSampleData();
   }
 
-  private initializeSampleData() {
-    // Create sample engines
-    this.createEngine({
+  private async initializeSampleData() {
+    // Create sample engines with initial settings
+    const engine1 = await this.createEngine({
       name: "Engine Alpha",
       maxCapacity: 500,
       efficiency: 4.2,
       optimalThreshold: 150,
     });
     
-    this.createEngine({
+    const engine2 = await this.createEngine({
       name: "Engine Beta",
       maxCapacity: 350,
       efficiency: 3.8,
       optimalThreshold: 100,
     });
     
-    this.createEngine({
+    const engine3 = await this.createEngine({
       name: "Engine Gamma",
       maxCapacity: 650,
       efficiency: 5.1,
@@ -127,7 +127,7 @@ export class MemStorage implements IStorage {
     });
 
     // Initialize simulation state
-    this.createSimulationState({
+    await this.createSimulationState({
       currentDay: 1,
       currentHour: 8,
       isRunning: false,
@@ -135,7 +135,7 @@ export class MemStorage implements IStorage {
     });
 
     // Create energy storage
-    this.createEnergyStorage({
+    await this.createEnergyStorage({
       maxCapacity: 600,
       currentCharge: 450,
       chargeEfficiency: 0.9,
@@ -143,10 +143,57 @@ export class MemStorage implements IStorage {
     });
 
     // Create pre-defined solar production data
-    this.initializeSolarProductionData();
+    await this.initializeSolarProductionData();
     
     // Create pre-defined consumption data
-    this.initializeConsumptionData();
+    await this.initializeConsumptionData();
+
+    // After initializing consumption data, get the current demand and match engine production
+    const currentDay = 1;
+    const currentHour = 8;
+    
+    // Get current consumption demand
+    const consumption = await this.getConsumption(currentDay, currentHour);
+    
+    // Get current solar production
+    const solarProduction = await this.getSolarProduction(currentDay, currentHour);
+    
+    if (consumption && solarProduction) {
+      const totalDemand = consumption.demand;
+      const solarOutput = solarProduction.output;
+      
+      // Calculate remaining demand after solar production
+      const remainingDemand = Math.max(0, totalDemand - solarOutput);
+      
+      if (remainingDemand > 0) {
+        // Calculate how to distribute the remaining demand across the three engines
+        // We'll distribute proportionally to their max capacity
+        const totalCapacity = engine1.maxCapacity + engine2.maxCapacity + engine3.maxCapacity;
+        
+        // Calculate each engine's share of the remaining demand
+        const engine1Output = Math.min(Math.round((engine1.maxCapacity / totalCapacity) * remainingDemand), engine1.maxCapacity);
+        const engine2Output = Math.min(Math.round((engine2.maxCapacity / totalCapacity) * remainingDemand), engine2.maxCapacity);
+        
+        // The third engine will handle any remainder to ensure exact match with demand
+        const adjustedRemainingDemand = remainingDemand - engine1Output - engine2Output;
+        const engine3Output = Math.min(adjustedRemainingDemand, engine3.maxCapacity);
+        
+        // Update the engines with their calculated outputs
+        await this.updateEngine(engine1.id, { currentOutput: engine1Output });
+        await this.updateEngine(engine2.id, { currentOutput: engine2Output });
+        await this.updateEngine(engine3.id, { currentOutput: engine3Output });
+        
+        console.log(`Initialized engines to match demand: Total demand ${totalDemand}kW, Solar ${solarOutput}kW, Engines: ${engine1Output}kW + ${engine2Output}kW + ${engine3Output}kW = ${engine1Output + engine2Output + engine3Output}kW`);
+      } else {
+        // If solar production exceeds demand, set minimal output for engines
+        // We'll keep them running at 10% capacity for quick response to demand changes
+        await this.updateEngine(engine1.id, { currentOutput: Math.round(engine1.maxCapacity * 0.1) });
+        await this.updateEngine(engine2.id, { currentOutput: Math.round(engine2.maxCapacity * 0.1) });
+        await this.updateEngine(engine3.id, { currentOutput: Math.round(engine3.maxCapacity * 0.1) });
+        
+        console.log(`Solar production (${solarOutput}kW) exceeds demand (${totalDemand}kW). Engines set to minimal output.`);
+      }
+    }
   }
 
   // Initialize pre-defined solar production data
@@ -260,7 +307,7 @@ export class MemStorage implements IStorage {
     const engine: Engine = {
       ...insertEngine,
       id,
-      isRunning: false,
+      isRunning: true,
       currentOutput: 0,
       createdAt: new Date(),
     };

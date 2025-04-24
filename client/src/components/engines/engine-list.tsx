@@ -2,15 +2,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useEngines } from "@/hooks/use-engines";
 import { Engine } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import EngineForm from "./engine-form";
-import { PlusIcon, Edit, Trash2, Power, Zap, Info, Gauge, ArrowRight } from "lucide-react";
+import { PlusIcon, Edit, Trash2, Power, Zap, Gauge, ArrowRight, List, BarChart as BarChartIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLocation } from "wouter";
 
 export default function EngineList() {
-  const { engines, toggleEngineState, updateEngineOutput, deleteEngine } = useEngines();
+  const { engines, runningEngines, totalEngineProduction, toggleEngineState, updateEngineOutput, deleteEngine } = useEngines();
+  const [, setLocation] = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
@@ -40,73 +43,118 @@ export default function EngineList() {
     }
   };
 
+  const chartData = runningEngines?.map(engine => ({
+    name: engine.name,
+    output: engine.currentOutput,
+  })) || [];
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Engine Management</h2>
+        <h2 className="text-2xl font-bold">Engine Overview</h2>
         <Button onClick={() => setIsAddDialogOpen(true)}>
-          <PlusIcon className="mr-2 h-4 w-4" />
+          <PlusIcon className="h-4 w-4 mr-2" />
           Add Engine
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {engines?.map((engine) => (
-          <Card 
-            key={engine.id} 
-            className={`cursor-pointer hover:shadow-md transition-shadow ${
-              engine.isRunning ? "border-green-200" : ""
-            }`}
-            onClick={() => handleViewDetails(engine)}
-          >
-            <CardContent className="p-4">
-              <div className="flex flex-col items-center space-y-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  engine.isRunning ? "bg-green-100" : "bg-gray-100"
-                }`}>
-                  <Zap className={`h-6 w-6 ${
-                    engine.isRunning ? "text-green-600" : "text-gray-400"
-                  }`} />
-                </div>
-                <h3 className="font-medium text-center">{engine.name}</h3>
-                <Badge 
-                  variant="outline"
-                  className={engine.isRunning ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                >
-                  {engine.isRunning ? "Running" : "Standby"}
-                </Badge>
-                {engine.isRunning && (
-                  <p className="text-sm text-center">{engine.currentOutput} kWh</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Add Engine Card */}
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow border-dashed"
-          onClick={() => setIsAddDialogOpen(true)}
-        >
-          <CardContent className="p-4 flex flex-col items-center justify-center h-full">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <PlusIcon className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="font-medium mt-3">Add Engine</h3>
+      {/* Overview Statistics */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Total Engines Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Engines</CardTitle>
+            <CardDescription>All registered engines</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{engines?.length || 0}</div>
           </CardContent>
         </Card>
 
-        {engines?.length === 0 && (
-          <Card className="col-span-full">
-            <CardContent className="flex flex-col items-center justify-center h-40">
-              <p className="text-neutral-light mb-4">No engines added yet</p>
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Add Engine
+        {/* Running Engines Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Running Engines</CardTitle>
+            <CardDescription>Currently active engines</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{runningEngines?.length || 0}</div>
+          </CardContent>
+        </Card>
+
+        {/* Total Production Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Production</CardTitle>
+            <CardDescription>Current power output</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totalEngineProduction} kW</div>
+          </CardContent>
+        </Card>
+      </div>
+  
+      {/* Production Chart */}
+      {runningEngines && runningEngines.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Engine Production</CardTitle>
+            <CardDescription>Current output by engine (kWh)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="output" fill="#10b981" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* View All Engines Button */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setLocation("/engines")}>
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <List className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="font-medium text-lg">Engine Management</h3>
+              <p className="text-sm text-center text-muted-foreground">
+                View and manage all engines with detailed information and controls
+              </p>
+              <Button variant="outline" className="mt-2">
+                View All Engines
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Engine Performance Card */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setLocation("/reports")}>
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <BarChartIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="font-medium text-lg">Engine Performance</h3>
+              <p className="text-sm text-center text-muted-foreground">
+                View detailed performance metrics and efficiency reports for all engines
+              </p>
+              <Button variant="outline" className="mt-2">
+                View Performance
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Add Engine Dialog */}
@@ -164,18 +212,6 @@ export default function EngineList() {
                     <p className="font-medium">{selectedEngine.optimalThreshold} kWh</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Power className="h-5 w-5 text-neutral-light" />
-                  <div>
-                    <p className="text-sm text-neutral-light">Status</p>
-                    <Badge 
-                      variant="outline"
-                      className={selectedEngine.isRunning ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                    >
-                      {selectedEngine.isRunning ? "Running" : "Standby"}
-                    </Badge>
-                  </div>
-                </div>
               </div>
 
               {selectedEngine.isRunning && (
@@ -197,42 +233,6 @@ export default function EngineList() {
                   </div>
                 </div>
               )}
-
-              <div className="flex justify-between pt-4 border-t">
-                <Button 
-                  variant={selectedEngine.isRunning ? "destructive" : "default"}
-                  onClick={() => {
-                    handleToggle(selectedEngine.id, selectedEngine.isRunning);
-                    setIsDetailsDialogOpen(false);
-                  }}
-                >
-                  <Power className="h-4 w-4 mr-2" />
-                  {selectedEngine.isRunning ? "Shut Down" : "Start Engine"}
-                </Button>
-                <div className="space-x-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsDetailsDialogOpen(false);
-                      handleEdit(selectedEngine);
-                    }}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="text-red-500"
-                    onClick={() => {
-                      setIsDetailsDialogOpen(false);
-                      handleDelete(selectedEngine.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
             </div>
           )}
         </DialogContent>
