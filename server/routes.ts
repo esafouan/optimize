@@ -120,15 +120,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current solar production
   app.get(`${apiPrefix}/solar/current`, async (req, res) => {
     try {
-      const simulationState = await storage.getSimulationState();
-      if (!simulationState) {
-        return res.status(404).json({ message: "Simulation state not found" });
-      }
+      // Use fixed day/hour values
+      const currentDay = 1;
+      const currentHour = 8;
       
-      const solarProduction = await storage.getSolarProduction(
-        simulationState.currentDay,
-        simulationState.currentHour
-      );
+      const solarProduction = await storage.getSolarProduction(currentDay, currentHour);
       
       if (!solarProduction) {
         return res.json({ output: 0 });
@@ -143,15 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get daily solar production
   app.get(`${apiPrefix}/solar/day/:day?`, async (req, res) => {
     try {
-      let day = req.params.day ? parseInt(req.params.day) : null;
-      
-      if (!day) {
-        const simulationState = await storage.getSimulationState();
-        if (!simulationState) {
-          return res.status(404).json({ message: "Simulation state not found" });
-        }
-        day = simulationState.currentDay;
-      }
+      let day = req.params.day ? parseInt(req.params.day) : 1; // Default to day 1
       
       const dailySolar = await storage.getDailySolarProduction(day);
       res.json(dailySolar);
@@ -222,15 +210,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current consumption
   app.get(`${apiPrefix}/consumption/current`, async (req, res) => {
     try {
-      const simulationState = await storage.getSimulationState();
-      if (!simulationState) {
-        return res.status(404).json({ message: "Simulation state not found" });
-      }
+      // Use fixed day/hour values
+      const currentDay = 1;
+      const currentHour = 8;
       
-      const consumption = await storage.getConsumption(
-        simulationState.currentDay,
-        simulationState.currentHour
-      );
+      const consumption = await storage.getConsumption(currentDay, currentHour);
       
       if (!consumption) {
         return res.json({ demand: 0 });
@@ -245,15 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get daily consumption
   app.get(`${apiPrefix}/consumption/day/:day?`, async (req, res) => {
     try {
-      let day = req.params.day ? parseInt(req.params.day) : null;
-      
-      if (!day) {
-        const simulationState = await storage.getSimulationState();
-        if (!simulationState) {
-          return res.status(404).json({ message: "Simulation state not found" });
-        }
-        day = simulationState.currentDay;
-      }
+      let day = req.params.day ? parseInt(req.params.day) : 1; // Default to day 1
       
       const dailyConsumption = await storage.getDailyConsumption(day);
       res.json(dailyConsumption);
@@ -319,53 +295,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /**
-   * SIMULATION API
+   * REAL-TIME DATA REFRESH API
    */
-  // Get current simulation state
-  app.get(`${apiPrefix}/simulation`, async (req, res) => {
+  // Refresh optimization data
+  app.post(`${apiPrefix}/refresh`, async (req, res) => {
     try {
-      let simulationState = await storage.getSimulationState();
-      if (!simulationState) {
-        // Create default simulation state if none exists
-        simulationState = await storage.createSimulationState({
-          currentDay: 1,
-          currentHour: 8,
-          isRunning: false,
-          engineStates: {}
-        });
-      }
-      res.json(simulationState);
+      // Generate optimization suggestions and economic impact
+      await generateOptimizationSuggestionsForCurrentState();
+      await calculateEconomicImpactForCurrentState();
+      
+      res.json({ 
+        success: true, 
+        message: "Data refreshed successfully",
+        timestamp: new Date()
+      });
     } catch (error) {
-      res.status(500).json({ message: "Failed to get simulation state" });
-    }
-  });
-
-  // Update simulation state
-  app.patch(`${apiPrefix}/simulation`, async (req, res) => {
-    try {
-      const stateUpdate = updateSimulationStateSchema.partial().parse(req.body);
-      let simulationState = await storage.getSimulationState();
-      
-      if (!simulationState) {
-        simulationState = await storage.createSimulationState({
-          currentDay: stateUpdate.currentDay || 1,
-          currentHour: stateUpdate.currentHour || 8,
-          isRunning: stateUpdate.isRunning || false,
-          engineStates: stateUpdate.engineStates || {}
-        });
-      } else {
-        simulationState = await storage.updateSimulationState(simulationState.id, stateUpdate);
-      }
-      
-      // When simulation advances, generate updated data and suggestions
-      if (stateUpdate.currentDay !== undefined || stateUpdate.currentHour !== undefined) {
-        await generateOptimizationSuggestionsForCurrentState();
-        await calculateEconomicImpactForCurrentState();
-      }
-      
-      res.json(simulationState);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid simulation state data", error });
+      res.status(500).json({ message: "Failed to refresh data" });
     }
   });
 
