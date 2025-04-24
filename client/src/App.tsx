@@ -8,7 +8,6 @@ import Dashboard from "@/pages/dashboard";
 import Engines from "@/pages/engines";
 import Solar from "@/pages/solar";
 import Consumption from "@/pages/consumption";
-import Simulation from "@/pages/simulation";
 import Reports from "@/pages/reports";
 import Instructions from "@/pages/instructions";
 import NotFound from "@/pages/not-found";
@@ -21,7 +20,6 @@ function Router() {
         <Route path="/engines" component={Engines} />
         <Route path="/solar" component={Solar} />
         <Route path="/consumption" component={Consumption} />
-        <Route path="/simulation" component={Simulation} />
         <Route path="/instructions" component={Instructions} />
         <Route path="/reports" component={Reports} />
         <Route component={NotFound} />

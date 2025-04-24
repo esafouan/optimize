@@ -5,7 +5,6 @@ import {
   Box,
   SunIcon,
   Factory,
-  Clock,
   FileText,
   Settings,
   Zap,
@@ -41,11 +40,6 @@ export default function Sidebar() {
       href: "/consumption",
       label: "Consumption",
       icon: <Factory className="h-5 w-5 mr-3" />,
-    },
-    {
-      href: "/simulation",
-      label: "Simulation",
-      icon: <Clock className="h-5 w-5 mr-3" />,
     },
     {
       href: "/instructions",
